@@ -3,6 +3,7 @@ package com.darkender.plugins.marksman;
 import com.darkender.plugins.marksman.commands.MarksmanCommand;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,7 +14,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+
+import java.util.function.Predicate;
 
 public class Marksman extends JavaPlugin implements Listener
 {
@@ -68,16 +72,46 @@ public class Marksman extends JavaPlugin implements Listener
         if(data.has(gunFlag, PersistentDataType.STRING))
         {
             String gunName = data.get(gunFlag, PersistentDataType.STRING);
+            
             if(gunName.equals("debug"))
             {
                 // Fire debug particles
+                
+                // Raytrace to get nearest collision
                 Location debugStart = getHandScreenLocation(player.getEyeLocation(), offhand);
-                Vector step = player.getEyeLocation().getDirection().clone().multiply(0.25);
+                RayTraceResult rayTraceResult = debugStart.getWorld().rayTrace(debugStart, player.getEyeLocation().getDirection(),
+                        50.0, FluidCollisionMode.NEVER, true, 0.1, new Predicate<Entity>()
+                        {
+                            @Override
+                            public boolean test(Entity entity)
+                            {
+                                // Ensure the raytrace doesn't collide with the player
+                                return (entity.getEntityId() != player.getEntityId());
+                            }
+                        });
+                
+                double distance;
+                if(rayTraceResult == null)
+                {
+                    distance = 50.0;
+                }
+                else
+                {
+                    Location hitLoc = new Location(debugStart.getWorld(), rayTraceResult.getHitPosition().getX(),
+                            rayTraceResult.getHitPosition().getY(), rayTraceResult.getHitPosition().getZ());
+                    distance = debugStart.distance(hitLoc);
+                }
+                
+                // Draw particles extending until the raytrace collides or expires
+                double distanceProgress = 0.0;
+                double stepDistance = 0.15;
+                Vector step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
                 Location current = debugStart.clone();
-                for(int i = 0; i < 100; i++)
+                while(distanceProgress <= distance)
                 {
                     current.getWorld().spawnParticle(Particle.REDSTONE, current, 0, new Particle.DustOptions(Color.AQUA, 0.5F));
                     current = current.add(step);
+                    distanceProgress += stepDistance;
                 }
             }
         }
