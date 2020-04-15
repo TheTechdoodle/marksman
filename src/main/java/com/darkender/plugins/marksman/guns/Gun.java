@@ -49,4 +49,9 @@ public abstract class Gun
     {
         return gunSettings;
     }
+    
+    protected static long ticksToNanoseconds(int ticks)
+    {
+        return ticks * 50000000;
+    }
 }

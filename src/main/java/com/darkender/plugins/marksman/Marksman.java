@@ -13,6 +13,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemFlag;
@@ -51,7 +52,7 @@ public class Marksman extends JavaPlugin implements Listener
         huntingRifleSettings.setGunMaterial(Material.IRON_HORSE_ARMOR);
         huntingRifleSettings.setReloadAmount(5);
         huntingRifleSettings.setReloadIndividually(true);
-        huntingRifleSettings.setReloadDelay(10);
+        huntingRifleSettings.setReloadDelay(15);
         huntingRifleSettings.setShootDelay(22);
         
         huntingRifleSettings.setHeadshotsEnabled(true);
@@ -67,7 +68,10 @@ public class Marksman extends JavaPlugin implements Listener
         
         huntingRifleSettings.setFireSound(new SoundCollection(Arrays.asList(
                 new SoundData(Sound.ENTITY_BLAZE_HURT, 1.0F, 1.0F, SoundContext.LOCATION, 0),
-                new SoundData(Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F, SoundContext.LOCATION, 0)
+                new SoundData(Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F, SoundContext.LOCATION, 0),
+                new SoundData(Sound.BLOCK_NOTE_BLOCK_HAT, 0.0F, 1.0F, SoundContext.LOCATION, 5),
+                new SoundData(Sound.BLOCK_PISTON_CONTRACT, 2.0F, 1.0F, SoundContext.LOCATION, 7),
+                new SoundData(Sound.BLOCK_PISTON_EXTEND, 2.0F, 1.0F, SoundContext.LOCATION, 21)
         )));
         huntingRifleSettings.setReloadSound(new SoundCollection(Arrays.asList(
                 new SoundData(Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1.0F, SoundContext.LOCATION, 0)
@@ -283,9 +287,24 @@ public class Marksman extends JavaPlugin implements Listener
         String gunName = getGun(event.getItem());
         if(gunName != null)
         {
-            event.getPlayer().sendMessage(ChatColor.GOLD + "Interacted with " + ChatColor.DARK_AQUA + gunName +
-                    ChatColor.BLUE + " (" + event.getAction().name().toLowerCase() + ")");
+            if(gunName.equals("debug"))
+            {
+                event.getPlayer().sendMessage(ChatColor.GOLD + "Interacted with " + ChatColor.DARK_AQUA + gunName +
+                        ChatColor.BLUE + " (" + event.getAction().name().toLowerCase() + ")");
+            }
             event.setCancelled(true);
+            
+            if(activeGuns.containsKey(event.getPlayer().getUniqueId()))
+            {
+                if(event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK)
+                {
+                    activeGuns.get(event.getPlayer().getUniqueId()).fire();
+                }
+                else if(event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK)
+                {
+                    activeGuns.get(event.getPlayer().getUniqueId()).reload();
+                }
+            }
         }
     }
     

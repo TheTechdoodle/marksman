@@ -10,10 +10,12 @@ public class HuntingRifle extends Gun
 {
     private BukkitTask reloadTask;
     private long lastShot = 0;
+    private final long initialized;
     
     public HuntingRifle(GunSettings gunSettings, Player player, ItemStack item)
     {
         super(gunSettings, player, item);
+        initialized = System.nanoTime();
     }
     
     @Override
@@ -24,20 +26,21 @@ public class HuntingRifle extends Gun
             reload();
             return;
         }
-        
-        long nanoTime = System.nanoTime();
-        if((nanoTime - lastShot) > (gunSettings.getShootDelay() * 50000000))
-        {
-            return;
-        }
-        lastShot = nanoTime;
-        
+    
         // Cancel reloading if reloading while the gun is firing
         if(reloadTask != null)
         {
             reloadTask.cancel();
             reloadTask = null;
         }
+        
+        long nanoTime = System.nanoTime();
+        if((nanoTime - lastShot) < Gun.ticksToNanoseconds(gunSettings.getShootDelay()) ||
+                (nanoTime - initialized)  < Gun.ticksToNanoseconds(gunSettings.getShootDelay()))
+        {
+            return;
+        }
+        lastShot = nanoTime;
         
         gunSettings.getFireSound().play(player);
         setCurrentAmmo(getCurrentAmmo() - 1);
@@ -89,6 +92,7 @@ public class HuntingRifle extends Gun
     {
         setCurrentAmmo(getCurrentAmmo() + 1);
         gunSettings.getReloadSound().play(player);
+        lastShot = System.nanoTime();
         
         if(getCurrentAmmo() < gunSettings.getReloadAmount())
         {
