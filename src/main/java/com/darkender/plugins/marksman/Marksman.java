@@ -43,7 +43,7 @@ public class Marksman extends JavaPlugin implements Listener
                     gunTick(p, p.getInventory().getItemInOffHand(), true);
                 }
             }
-        }, 5L, 1L);
+        }, 1L, 4L);
     }
     
     private Location getHandScreenLocation(Location loc, boolean offhand)
@@ -51,7 +51,7 @@ public class Marksman extends JavaPlugin implements Listener
         Location spawnFrom = loc.clone();
         Vector normal2D = spawnFrom.getDirection().clone().setY(0).normalize()
                 .rotateAroundY((offhand ? 1 : -1) * (Math.PI / 2))
-                .multiply(0.55).setY(-0.35);
+                .multiply(0.40).setY(-0.35);
         spawnFrom.add(normal2D);
         spawnFrom.add(loc.getDirection().clone().multiply(-0.3));
         return spawnFrom;
@@ -80,7 +80,7 @@ public class Marksman extends JavaPlugin implements Listener
                 // Raytrace to get nearest collision
                 Location debugStart = getHandScreenLocation(player.getEyeLocation(), offhand);
                 RayTraceResult rayTraceResult = debugStart.getWorld().rayTrace(debugStart, player.getEyeLocation().getDirection(),
-                        50.0, FluidCollisionMode.NEVER, true, 0.1, new Predicate<Entity>()
+                        50.0, FluidCollisionMode.NEVER, true, 0.0, new Predicate<Entity>()
                         {
                             @Override
                             public boolean test(Entity entity)
@@ -100,6 +100,7 @@ public class Marksman extends JavaPlugin implements Listener
                     Location hitLoc = new Location(debugStart.getWorld(), rayTraceResult.getHitPosition().getX(),
                             rayTraceResult.getHitPosition().getY(), rayTraceResult.getHitPosition().getZ());
                     distance = debugStart.distance(hitLoc);
+                    hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, 0);
                 }
                 
                 // Draw particles extending until the raytrace collides or expires
@@ -109,7 +110,30 @@ public class Marksman extends JavaPlugin implements Listener
                 Location current = debugStart.clone();
                 while(distanceProgress <= distance)
                 {
-                    current.getWorld().spawnParticle(Particle.REDSTONE, current, 0, new Particle.DustOptions(Color.AQUA, 0.5F));
+                    if((distance - distanceProgress) < 10)
+                    {
+                        if(distance != 50)
+                        {
+                            if(stepDistance > 0.15)
+                            {
+                                stepDistance -= 0.3;
+                                step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
+                            }
+                            else if(stepDistance < 0.15)
+                            {
+                                stepDistance = 0.15;
+                                step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
+                            }
+                        }
+                    }
+                    else if(stepDistance < 2.0)
+                    {
+                        stepDistance += 0.3;
+                        step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
+                    }
+                    
+                    current.getWorld().spawnParticle(Particle.REDSTONE, current, 0, new Particle.DustOptions(
+                            (distance - distanceProgress) < 3 ? Color.RED : Color.AQUA, 0.5F));
                     current = current.add(step);
                     distanceProgress += stepDistance;
                 }
