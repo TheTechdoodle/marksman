@@ -78,7 +78,8 @@ public class Marksman extends JavaPlugin implements Listener
                 // Fire debug particles
                 
                 // Raytrace to get nearest collision
-                Location debugStart = getHandScreenLocation(player.getEyeLocation(), offhand);
+                //Location debugStart = getHandScreenLocation(player.getEyeLocation(), offhand);
+                Location debugStart = player.getEyeLocation();
                 RayTraceResult rayTraceResult = debugStart.getWorld().rayTrace(debugStart, player.getEyeLocation().getDirection(),
                         50.0, FluidCollisionMode.NEVER, true, 0.0, new Predicate<Entity>()
                         {
@@ -90,46 +91,55 @@ public class Marksman extends JavaPlugin implements Listener
                             }
                         });
                 
+                Location modelLoc = getHandScreenLocation(player.getEyeLocation(), offhand);
+                Vector modelDirection;
                 double distance;
                 if(rayTraceResult == null)
                 {
                     distance = 50.0;
+                    Vector to = player.getEyeLocation().toVector().add(player.getEyeLocation().getDirection().multiply(distance));
+                    Vector from = modelLoc.toVector();
+                    modelDirection = to.subtract(from).normalize();
                 }
                 else
                 {
                     Location hitLoc = new Location(debugStart.getWorld(), rayTraceResult.getHitPosition().getX(),
                             rayTraceResult.getHitPosition().getY(), rayTraceResult.getHitPosition().getZ());
-                    distance = debugStart.distance(hitLoc);
+                    distance = modelLoc.distance(hitLoc);
                     hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, 0);
+    
+                    Vector to = hitLoc.toVector();
+                    Vector from = modelLoc.toVector();
+                    modelDirection = to.subtract(from).normalize();
                 }
                 
                 // Draw particles extending until the raytrace collides or expires
                 double distanceProgress = 0.0;
                 double stepDistance = 0.15;
-                Vector step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
-                Location current = debugStart.clone();
+                Vector step = modelDirection.clone().multiply(stepDistance);
+                Location current = modelLoc.clone();
                 while(distanceProgress <= distance)
                 {
-                    if((distance - distanceProgress) < 10)
+                    if((distance - distanceProgress) < 5)
                     {
                         if(distance != 50)
                         {
                             if(stepDistance > 0.15)
                             {
                                 stepDistance -= 0.3;
-                                step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
+                                step = modelDirection.clone().multiply(stepDistance);
                             }
                             else if(stepDistance < 0.15)
                             {
                                 stepDistance = 0.15;
-                                step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
+                                step = modelDirection.clone().multiply(stepDistance);
                             }
                         }
                     }
                     else if(stepDistance < 2.0)
                     {
-                        stepDistance += 0.3;
-                        step = player.getEyeLocation().getDirection().clone().multiply(stepDistance);
+                        stepDistance += 0.15;
+                        step = modelDirection.clone().multiply(stepDistance);
                     }
                     
                     current.getWorld().spawnParticle(Particle.REDSTONE, current, 0, new Particle.DustOptions(
