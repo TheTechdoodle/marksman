@@ -1,6 +1,10 @@
 package com.darkender.plugins.marksman;
 
 import com.darkender.plugins.marksman.commands.MarksmanCommand;
+import com.darkender.plugins.marksman.guns.GunSettings;
+import com.darkender.plugins.marksman.sound.SoundCollection;
+import com.darkender.plugins.marksman.sound.SoundContext;
+import com.darkender.plugins.marksman.sound.SoundData;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
@@ -17,17 +21,54 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import java.util.Arrays;
 import java.util.function.Predicate;
 
 public class Marksman extends JavaPlugin implements Listener
 {
-    private NamespacedKey gunFlag = new NamespacedKey(this, "gun");
+    public static NamespacedKey gunFlag;
+    public static NamespacedKey ammoFlag;
+    
     public static Marksman instance;
+    public static GunSettings huntingRifleSettings;
     
     @Override
     public void onEnable()
     {
         instance = this;
+        gunFlag = new NamespacedKey(this, "gun");
+        ammoFlag = new NamespacedKey(this, "ammo");
+        
+        huntingRifleSettings = new GunSettings("hunting-rifle");
+        huntingRifleSettings.setDisplayName("Hunting Rifle");
+        huntingRifleSettings.setGunMaterial(Material.IRON_HORSE_ARMOR);
+        huntingRifleSettings.setReloadAmount(5);
+        huntingRifleSettings.setReloadIndividually(true);
+        huntingRifleSettings.setReloadDelay(10);
+        huntingRifleSettings.setShootDelay(22);
+        
+        huntingRifleSettings.setHeadshotsEnabled(true);
+        huntingRifleSettings.setHeadshotFirework(true);
+        huntingRifleSettings.setHeadshotDamage(5.0);
+        
+        huntingRifleSettings.setTerrainParticles(true);
+        huntingRifleSettings.setEntityParticles(true);
+        huntingRifleSettings.setShootParticles(Particle.FIREWORKS_SPARK);
+        
+        huntingRifleSettings.setKnockback(2.0);
+        huntingRifleSettings.setDamage(8.0);
+        
+        huntingRifleSettings.setFireSound(new SoundCollection(Arrays.asList(
+                new SoundData(Sound.ENTITY_BLAZE_HURT, 1.0F, 1.0F, SoundContext.LOCATION, 0),
+                new SoundData(Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F, SoundContext.LOCATION, 0)
+        )));
+        huntingRifleSettings.setReloadSound(new SoundCollection(Arrays.asList(
+                new SoundData(Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1.0F, SoundContext.LOCATION, 0)
+        )));
+        huntingRifleSettings.setHeadshotSound(new SoundCollection(Arrays.asList(
+                new SoundData(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 1.0F, SoundContext.PLAYER, 0)
+        )));
+        
         
         MarksmanCommand marksmanCommand = new MarksmanCommand(this);
         getCommand("marksman").setExecutor(marksmanCommand);

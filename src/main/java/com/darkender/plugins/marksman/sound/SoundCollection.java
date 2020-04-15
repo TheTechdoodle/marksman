@@ -8,7 +8,17 @@ import java.util.List;
 
 public class SoundCollection
 {
-    private List<SoundData> sounds = new ArrayList<>();
+    private final List<SoundData> sounds;
+    
+    public SoundCollection()
+    {
+        this.sounds = new ArrayList<>();
+    }
+    
+    public SoundCollection(List<SoundData> sounds)
+    {
+        this.sounds = sounds;
+    }
     
     /**
      * Plays all the sounds using the player's location

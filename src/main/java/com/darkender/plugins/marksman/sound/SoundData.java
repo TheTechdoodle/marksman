@@ -10,11 +10,25 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class SoundData
 {
-    private Sound sound;
-    private float pitch;
-    private float volume;
-    private SoundContext context;
-    private int delay;
+    private Sound sound = null;
+    private float pitch = 0.0F;
+    private float volume = 0.0F;
+    private SoundContext context = null;
+    private int delay = 0;
+    
+    public SoundData()
+    {
+    
+    }
+    
+    public SoundData(Sound sound, float pitch, float volume, SoundContext context, int delay)
+    {
+        this.sound = sound;
+        this.pitch = pitch;
+        this.volume = volume;
+        this.context = context;
+        this.delay = delay;
+    }
     
     /**
      * Plays the sound in the context using the player's location
