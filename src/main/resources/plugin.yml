@@ -1,0 +1,11 @@
+name: Marksman
+version: ${project.version}
+main: com.darkender.plugins.marksman.Marksman
+api-version: 1.15
+author: Techdoodle
+description: Advanced guns plugin
+commands:
+  marksman:
+    aliases:
+      - mk
+    permission: marksman.marksman
