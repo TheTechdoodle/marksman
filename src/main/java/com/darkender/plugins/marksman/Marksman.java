@@ -1,7 +1,9 @@
 package com.darkender.plugins.marksman;
 
 import com.darkender.plugins.marksman.commands.MarksmanCommand;
+import com.darkender.plugins.marksman.guns.Gun;
 import com.darkender.plugins.marksman.guns.GunSettings;
+import com.darkender.plugins.marksman.guns.HuntingRifle;
 import com.darkender.plugins.marksman.sound.SoundCollection;
 import com.darkender.plugins.marksman.sound.SoundContext;
 import com.darkender.plugins.marksman.sound.SoundData;
@@ -12,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,16 +24,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
-import java.util.Arrays;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class Marksman extends JavaPlugin implements Listener
 {
     public static NamespacedKey gunFlag;
     public static NamespacedKey ammoFlag;
-    
     public static Marksman instance;
-    public static GunSettings huntingRifleSettings;
+    
+    private Set<GunSettings> guns;
+    private Map<UUID, Gun> activeGuns;
     
     @Override
     public void onEnable()
@@ -39,7 +43,10 @@ public class Marksman extends JavaPlugin implements Listener
         gunFlag = new NamespacedKey(this, "gun");
         ammoFlag = new NamespacedKey(this, "ammo");
         
-        huntingRifleSettings = new GunSettings("hunting-rifle");
+        guns = new HashSet<>();
+        activeGuns = new HashMap<>();
+        
+        GunSettings huntingRifleSettings = new GunSettings("hunting-rifle");
         huntingRifleSettings.setDisplayName("Hunting Rifle");
         huntingRifleSettings.setGunMaterial(Material.IRON_HORSE_ARMOR);
         huntingRifleSettings.setReloadAmount(5);
@@ -69,6 +76,8 @@ public class Marksman extends JavaPlugin implements Listener
                 new SoundData(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 1.0F, SoundContext.PLAYER, 0)
         )));
         
+        guns.add(huntingRifleSettings);
+        
         
         MarksmanCommand marksmanCommand = new MarksmanCommand(this);
         getCommand("marksman").setExecutor(marksmanCommand);
@@ -88,6 +97,45 @@ public class Marksman extends JavaPlugin implements Listener
                 }
             }
         }, 1L, 4L);
+        
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                for(Player p : Bukkit.getOnlinePlayers())
+                {
+                    String gunName = getGun(p.getInventory().getItemInMainHand());
+                    if(activeGuns.containsKey(p.getUniqueId()))
+                    {
+                        // If it's a different gun or if it's null
+                        if(gunName == null || !gunName.equals(activeGuns.get(p.getUniqueId()).getGunSettings().getName()))
+                        {
+                            activeGuns.get(p.getUniqueId()).close();
+                            activeGuns.remove(p.getUniqueId());
+                        }
+                    }
+                    
+                    if(gunName != null && !activeGuns.containsKey(p.getUniqueId()))
+                    {
+                        if(gunName.equals("hunting-rifle"))
+                        {
+                            activeGuns.put(p.getUniqueId(), new HuntingRifle(getGunSettings(gunName), p, p.getInventory().getItemInMainHand()));
+                        }
+                    }
+                }
+            }
+        }, 1L, 1L);
+    }
+    
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event)
+    {
+        if(activeGuns.containsKey(event.getPlayer().getUniqueId()))
+        {
+            activeGuns.get(event.getPlayer().getUniqueId()).close();
+            activeGuns.remove(event.getPlayer().getUniqueId());
+        }
     }
     
     private Location getHandScreenLocation(Location loc, boolean offhand)
@@ -101,96 +149,118 @@ public class Marksman extends JavaPlugin implements Listener
         return spawnFrom;
     }
     
-    private void gunTick(Player player, ItemStack item, boolean offhand)
+    private GunSettings getGunSettings(String name)
+    {
+        for(GunSettings settings : guns)
+        {
+            if(settings.getName().equals(name))
+            {
+                return settings;
+            }
+        }
+        return null;
+    }
+    
+    private String getGun(ItemStack item)
     {
         if(item == null)
         {
-            return;
+            return null;
         }
         ItemMeta meta = item.getItemMeta();
         if(meta == null)
         {
-            return;
+            return null;
         }
         PersistentDataContainer data = meta.getPersistentDataContainer();
         if(data.has(gunFlag, PersistentDataType.STRING))
         {
-            String gunName = data.get(gunFlag, PersistentDataType.STRING);
-            
-            if(gunName.equals("debug"))
-            {
-                // Fire debug particles
-                
-                // Raytrace to get nearest collision
-                //Location debugStart = getHandScreenLocation(player.getEyeLocation(), offhand);
-                Location debugStart = player.getEyeLocation();
-                RayTraceResult rayTraceResult = debugStart.getWorld().rayTrace(debugStart, player.getEyeLocation().getDirection(),
-                        50.0, FluidCollisionMode.NEVER, true, 0.0, new Predicate<Entity>()
-                        {
-                            @Override
-                            public boolean test(Entity entity)
-                            {
-                                // Ensure the raytrace doesn't collide with the player
-                                return (entity.getEntityId() != player.getEntityId());
-                            }
-                        });
-                
-                Location modelLoc = getHandScreenLocation(player.getEyeLocation(), offhand);
-                Vector modelDirection;
-                double distance;
-                if(rayTraceResult == null)
-                {
-                    distance = 50.0;
-                    Vector to = player.getEyeLocation().toVector().add(player.getEyeLocation().getDirection().multiply(distance));
-                    Vector from = modelLoc.toVector();
-                    modelDirection = to.subtract(from).normalize();
-                }
-                else
-                {
-                    Location hitLoc = new Location(debugStart.getWorld(), rayTraceResult.getHitPosition().getX(),
-                            rayTraceResult.getHitPosition().getY(), rayTraceResult.getHitPosition().getZ());
-                    distance = modelLoc.distance(hitLoc);
-                    hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, 0);
+            return data.get(gunFlag, PersistentDataType.STRING);
+        }
+        return null;
+    }
     
-                    Vector to = hitLoc.toVector();
-                    Vector from = modelLoc.toVector();
-                    modelDirection = to.subtract(from).normalize();
-                }
-                
-                // Draw particles extending until the raytrace collides or expires
-                double distanceProgress = 0.0;
-                double stepDistance = 0.15;
-                Vector step = modelDirection.clone().multiply(stepDistance);
-                Location current = modelLoc.clone();
-                while(distanceProgress <= distance)
-                {
-                    if((distance - distanceProgress) < 5)
+    private void gunTick(Player player, ItemStack item, boolean offhand)
+    {
+        String gunName = getGun(item);
+        if(gunName == null)
+        {
+            return;
+        }
+            
+        if(gunName.equals("debug"))
+        {
+            // Fire debug particles
+            
+            // Raytrace to get nearest collision
+            //Location debugStart = getHandScreenLocation(player.getEyeLocation(), offhand);
+            Location debugStart = player.getEyeLocation();
+            RayTraceResult rayTraceResult = debugStart.getWorld().rayTrace(debugStart, player.getEyeLocation().getDirection(),
+                    50.0, FluidCollisionMode.NEVER, true, 0.0, new Predicate<Entity>()
                     {
-                        if(distance != 50)
+                        @Override
+                        public boolean test(Entity entity)
                         {
-                            if(stepDistance > 0.15)
-                            {
-                                stepDistance -= 0.3;
-                                step = modelDirection.clone().multiply(stepDistance);
-                            }
-                            else if(stepDistance < 0.15)
-                            {
-                                stepDistance = 0.15;
-                                step = modelDirection.clone().multiply(stepDistance);
-                            }
+                            // Ensure the raytrace doesn't collide with the player
+                            return (entity.getEntityId() != player.getEntityId());
+                        }
+                    });
+            
+            Location modelLoc = getHandScreenLocation(player.getEyeLocation(), offhand);
+            Vector modelDirection;
+            double distance;
+            if(rayTraceResult == null)
+            {
+                distance = 50.0;
+                Vector to = player.getEyeLocation().toVector().add(player.getEyeLocation().getDirection().multiply(distance));
+                Vector from = modelLoc.toVector();
+                modelDirection = to.subtract(from).normalize();
+            }
+            else
+            {
+                Location hitLoc = new Location(debugStart.getWorld(), rayTraceResult.getHitPosition().getX(),
+                        rayTraceResult.getHitPosition().getY(), rayTraceResult.getHitPosition().getZ());
+                distance = modelLoc.distance(hitLoc);
+                hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, 0);
+
+                Vector to = hitLoc.toVector();
+                Vector from = modelLoc.toVector();
+                modelDirection = to.subtract(from).normalize();
+            }
+            
+            // Draw particles extending until the raytrace collides or expires
+            double distanceProgress = 0.0;
+            double stepDistance = 0.15;
+            Vector step = modelDirection.clone().multiply(stepDistance);
+            Location current = modelLoc.clone();
+            while(distanceProgress <= distance)
+            {
+                if((distance - distanceProgress) < 5)
+                {
+                    if(distance != 50)
+                    {
+                        if(stepDistance > 0.15)
+                        {
+                            stepDistance -= 0.3;
+                            step = modelDirection.clone().multiply(stepDistance);
+                        }
+                        else if(stepDistance < 0.15)
+                        {
+                            stepDistance = 0.15;
+                            step = modelDirection.clone().multiply(stepDistance);
                         }
                     }
-                    else if(stepDistance < 2.0)
-                    {
-                        stepDistance += 0.15;
-                        step = modelDirection.clone().multiply(stepDistance);
-                    }
-                    
-                    current.getWorld().spawnParticle(Particle.REDSTONE, current, 0, new Particle.DustOptions(
-                            (distance - distanceProgress) < 3 ? Color.RED : Color.AQUA, 0.5F));
-                    current = current.add(step);
-                    distanceProgress += stepDistance;
                 }
+                else if(stepDistance < 2.0)
+                {
+                    stepDistance += 0.15;
+                    step = modelDirection.clone().multiply(stepDistance);
+                }
+                
+                current.getWorld().spawnParticle(Particle.REDSTONE, current, 0, new Particle.DustOptions(
+                        (distance - distanceProgress) < 3 ? Color.RED : Color.AQUA, 0.5F));
+                current = current.add(step);
+                distanceProgress += stepDistance;
             }
         }
     }
@@ -210,23 +280,17 @@ public class Marksman extends JavaPlugin implements Listener
     @EventHandler
     public void onInteract(PlayerInteractEvent event)
     {
-        if(event.getItem() == null)
+        String gunName = getGun(event.getItem());
+        if(gunName != null)
         {
-            return;
-        }
-        
-        ItemMeta meta = event.getItem().getItemMeta();
-        if(meta == null)
-        {
-            return;
-        }
-        PersistentDataContainer data = meta.getPersistentDataContainer();
-        if(data.has(gunFlag, PersistentDataType.STRING))
-        {
-            String gunName = data.get(gunFlag, PersistentDataType.STRING);
             event.getPlayer().sendMessage(ChatColor.GOLD + "Interacted with " + ChatColor.DARK_AQUA + gunName +
                     ChatColor.BLUE + " (" + event.getAction().name().toLowerCase() + ")");
             event.setCancelled(true);
         }
+    }
+    
+    public Set<GunSettings> getGuns()
+    {
+        return guns;
     }
 }

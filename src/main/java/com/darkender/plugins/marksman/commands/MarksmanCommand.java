@@ -1,6 +1,7 @@
 package com.darkender.plugins.marksman.commands;
 
 import com.darkender.plugins.marksman.Marksman;
+import com.darkender.plugins.marksman.guns.GunSettings;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,20 +29,29 @@ public class MarksmanCommand implements CommandExecutor, TabCompleter
             sender.sendMessage(ChatColor.RED + "Requires argument");
             return true;
         }
+    
+        if(!(sender instanceof Player))
+        {
+            sender.sendMessage(ChatColor.RED + "Must be a player to run this command!");
+            return true;
+        }
+    
+        Player p = (Player) sender;
         
         if(args[0].equalsIgnoreCase("debug"))
         {
-            if(!(sender instanceof Player))
-            {
-                sender.sendMessage(ChatColor.RED + "Must be a player to run this command!");
-                return true;
-            }
-            
-            Player p = (Player) sender;
             p.getInventory().addItem(marksman.getDebugGun());
         }
         else
         {
+            for(GunSettings gunSettings : marksman.getGuns())
+            {
+                if(args[0].equals(gunSettings.getName()))
+                {
+                    p.getInventory().addItem(gunSettings.generate());
+                    return true;
+                }
+            }
             sender.sendMessage(ChatColor.RED + "Unknown command!");
         }
         return true;
@@ -54,6 +64,10 @@ public class MarksmanCommand implements CommandExecutor, TabCompleter
         if(args.length == 1)
         {
             suggestions.add("debug");
+            for(GunSettings gunSettings : marksman.getGuns())
+            {
+                suggestions.add(gunSettings.getName());
+            }
         }
         return suggestions;
     }

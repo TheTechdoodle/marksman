@@ -29,6 +29,7 @@ public abstract class Gun
     
     public abstract void fire();
     public abstract void reload();
+    public abstract void close();
     
     protected void setCurrentAmmo(int currentAmmo)
     {
@@ -42,5 +43,10 @@ public abstract class Gun
     protected int getCurrentAmmo()
     {
         return currentAmmo;
+    }
+    
+    public GunSettings getGunSettings()
+    {
+        return gunSettings;
     }
 }

@@ -36,6 +36,7 @@ public class HuntingRifle extends Gun
         if(reloadTask != null)
         {
             reloadTask.cancel();
+            reloadTask = null;
         }
         
         gunSettings.getFireSound().play(player);
@@ -58,6 +59,16 @@ public class HuntingRifle extends Gun
         if(reloadTask == null)
         {
             scheduleReloadSingle();
+        }
+    }
+    
+    @Override
+    public void close()
+    {
+        if(reloadTask != null)
+        {
+            reloadTask.cancel();
+            reloadTask = null;
         }
     }
     
