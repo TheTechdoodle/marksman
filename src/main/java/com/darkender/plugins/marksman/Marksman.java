@@ -22,10 +22,13 @@ import java.util.function.Predicate;
 public class Marksman extends JavaPlugin implements Listener
 {
     private NamespacedKey gunFlag = new NamespacedKey(this, "gun");
+    public static Marksman instance;
     
     @Override
     public void onEnable()
     {
+        instance = this;
+        
         MarksmanCommand marksmanCommand = new MarksmanCommand(this);
         getCommand("marksman").setExecutor(marksmanCommand);
         getCommand("marksman").setTabCompleter(marksmanCommand);
