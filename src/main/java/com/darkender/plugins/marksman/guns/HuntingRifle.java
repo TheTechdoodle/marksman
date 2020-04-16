@@ -11,6 +11,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
@@ -31,6 +33,20 @@ public class HuntingRifle extends Gun
     }
     
     @Override
+    public String getItemName()
+    {
+        return ChatColor.YELLOW + gunSettings.getDisplayName() + " ▪ «" + getCurrentAmmo() + "»" +
+                ((reloadTask == null) ? "" : "ᴿ");
+    }
+    
+    private void refreshItemName()
+    {
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(getItemName());
+        item.setItemMeta(meta);
+    }
+    
+    @Override
     public void fire()
     {
         if(getCurrentAmmo() == 0)
@@ -38,6 +54,7 @@ public class HuntingRifle extends Gun
             if(reloadTask == null)
             {
                 scheduleReloadSingle(gunSettings.getShootDelay());
+                refreshItemName();
             }
             return;
         }
@@ -47,6 +64,7 @@ public class HuntingRifle extends Gun
         {
             reloadTask.cancel();
             reloadTask = null;
+            refreshItemName();
         }
         
         long nanoTime = System.nanoTime();
@@ -182,6 +200,7 @@ public class HuntingRifle extends Gun
         else
         {
             reloadTask = null;
+            refreshItemName();
         }
     }
 }

@@ -30,12 +30,13 @@ public abstract class Gun
     public abstract void fire();
     public abstract void reload();
     public abstract void close();
+    protected abstract String getItemName();
     
     protected void setCurrentAmmo(int currentAmmo)
     {
         this.currentAmmo = currentAmmo;
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(ChatColor.GOLD + gunSettings.displayName + " [" + currentAmmo + "]");
+        meta.setDisplayName(getItemName());
         meta.getPersistentDataContainer().set(Marksman.ammoFlag, PersistentDataType.INTEGER, currentAmmo);
         item.setItemMeta(meta);
     }
