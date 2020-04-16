@@ -52,7 +52,7 @@ public class Marksman extends JavaPlugin implements Listener
         huntingRifleSettings.setGunMaterial(Material.IRON_HORSE_ARMOR);
         huntingRifleSettings.setReloadAmount(5);
         huntingRifleSettings.setReloadIndividually(true);
-        huntingRifleSettings.setReloadDelay(15);
+        huntingRifleSettings.setReloadDelay(12);
         huntingRifleSettings.setShootDelay(22);
         
         huntingRifleSettings.setHeadshotsEnabled(true);
@@ -63,7 +63,7 @@ public class Marksman extends JavaPlugin implements Listener
         huntingRifleSettings.setEntityParticles(true);
         huntingRifleSettings.setShootParticles(Particle.FIREWORKS_SPARK);
         
-        huntingRifleSettings.setKnockback(2.0);
+        huntingRifleSettings.setKnockback(1.4);
         huntingRifleSettings.setDamage(8.0);
         
         huntingRifleSettings.setFireSound(new SoundCollection(Arrays.asList(
@@ -71,7 +71,7 @@ public class Marksman extends JavaPlugin implements Listener
                 new SoundData(Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F, SoundContext.LOCATION, 0),
                 new SoundData(Sound.BLOCK_NOTE_BLOCK_HAT, 0.0F, 1.0F, SoundContext.LOCATION, 5),
                 new SoundData(Sound.BLOCK_PISTON_CONTRACT, 2.0F, 1.0F, SoundContext.LOCATION, 7),
-                new SoundData(Sound.BLOCK_PISTON_EXTEND, 2.0F, 1.0F, SoundContext.LOCATION, 21)
+                new SoundData(Sound.BLOCK_PISTON_EXTEND, 2.0F, 1.0F, SoundContext.LOCATION, 18)
         )));
         huntingRifleSettings.setReloadSound(new SoundCollection(Arrays.asList(
                 new SoundData(Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1.0F, SoundContext.LOCATION, 0)
@@ -142,7 +142,7 @@ public class Marksman extends JavaPlugin implements Listener
         }
     }
     
-    private Location getHandScreenLocation(Location loc, boolean offhand)
+    public static Location getHandScreenLocation(Location loc, boolean offhand)
     {
         Location spawnFrom = loc.clone();
         Vector normal2D = spawnFrom.getDirection().clone().setY(0).normalize()
