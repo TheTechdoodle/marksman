@@ -103,35 +103,40 @@ public class HuntingRifle extends Gun
             else if(rayTraceResult.getHitEntity() != null)
             {
                 LivingEntity e = (LivingEntity) rayTraceResult.getHitEntity();
-                double damage = gunSettings.getDamage();
-                boolean headshot = false;
-                if(gunSettings.isHeadshotsEnabled())
+                // Don't try to damage the player if they're in creative
+                if(!(e instanceof Player) || ((Player) e).getGameMode() != GameMode.CREATIVE)
                 {
-                    Vector relativeHit = rayTraceResult.getHitPosition().subtract(e.getLocation().toVector());
-                    if((e.getHeight() - relativeHit.getY()) < 0.60)
+                    double damage = gunSettings.getDamage();
+                    boolean headshot = false;
+                    if(gunSettings.isHeadshotsEnabled())
                     {
-                        damage += gunSettings.getHeadshotDamage();
-                        headshot = true;
-                    }
-                }
-        
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e, EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
-                Bukkit.getPluginManager().callEvent(event);
-                if(!event.isCancelled())
-                {
-                    if(headshot)
-                    {
-                        gunSettings.getHeadshotSound().play(player);
-                        if(gunSettings.isHeadshotFirework())
+                        Vector relativeHit = rayTraceResult.getHitPosition().subtract(e.getLocation().toVector());
+                        if((e.getHeight() - relativeHit.getY()) < 0.60)
                         {
-                            Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
-                            FireworkMeta meta = fw.getFireworkMeta();
-                            meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
-                            fw.setFireworkMeta(meta);
+                            damage += gunSettings.getHeadshotDamage();
+                            headshot = true;
                         }
                     }
-                    e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
-                    e.damage(damage, player);
+    
+                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e,
+                            EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
+                    Bukkit.getPluginManager().callEvent(event);
+                    if(!event.isCancelled())
+                    {
+                        if(headshot)
+                        {
+                            gunSettings.getHeadshotSound().play(player);
+                            if(gunSettings.isHeadshotFirework())
+                            {
+                                Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
+                                FireworkMeta meta = fw.getFireworkMeta();
+                                meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
+                                fw.setFireworkMeta(meta);
+                            }
+                        }
+                        e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
+                        e.damage(damage, player);
+                    }
                 }
             }
         }
