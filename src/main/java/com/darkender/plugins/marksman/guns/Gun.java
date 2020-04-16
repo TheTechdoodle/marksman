@@ -54,4 +54,9 @@ public abstract class Gun
     {
         return ticks * 50000000;
     }
+    
+    protected static int nanosecondsToTicks(long nanoseconds)
+    {
+        return (int) (nanoseconds / 50000000);
+    }
 }

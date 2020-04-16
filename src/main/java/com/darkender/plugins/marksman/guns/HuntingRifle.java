@@ -35,7 +35,10 @@ public class HuntingRifle extends Gun
     {
         if(getCurrentAmmo() == 0)
         {
-            reload();
+            if(reloadTask == null)
+            {
+                scheduleReloadSingle(gunSettings.getShootDelay());
+            }
             return;
         }
     
@@ -69,52 +72,58 @@ public class HuntingRifle extends Gun
                     }
                 });
         
-        if(rayTraceResult.getHitBlock() != null)
+        if(rayTraceResult != null)
         {
-            if(gunSettings.isTerrainParticles())
+            if(rayTraceResult.getHitBlock() != null)
             {
-                rayTraceResult.getHitBlock().getWorld().playEffect(rayTraceResult.getHitBlock().getLocation(),
-                        Effect.STEP_SOUND, rayTraceResult.getHitBlock().getType());
-            }
-        }
-        else if(rayTraceResult.getHitEntity() != null)
-        {
-            LivingEntity e = (LivingEntity) rayTraceResult.getHitEntity();
-            double damage = gunSettings.getDamage();
-            boolean headshot = false;
-            if(gunSettings.isHeadshotsEnabled())
-            {
-                Vector relativeHit = rayTraceResult.getHitPosition().subtract(e.getLocation().toVector());
-                if((e.getHeight() - relativeHit.getY()) < 0.60)
+                if(gunSettings.isTerrainParticles())
                 {
-                    damage += gunSettings.getHeadshotDamage();
-                    headshot = true;
+                    rayTraceResult.getHitBlock().getWorld().playEffect(rayTraceResult.getHitBlock().getLocation(),
+                            Effect.STEP_SOUND, rayTraceResult.getHitBlock().getType());
                 }
             }
-    
-            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e, EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
-            Bukkit.getPluginManager().callEvent(event);
-            if(!event.isCancelled())
+            else if(rayTraceResult.getHitEntity() != null)
             {
-                if(headshot)
+                LivingEntity e = (LivingEntity) rayTraceResult.getHitEntity();
+                double damage = gunSettings.getDamage();
+                boolean headshot = false;
+                if(gunSettings.isHeadshotsEnabled())
                 {
-                    gunSettings.getHeadshotSound().play(player);
-                    if(gunSettings.isHeadshotFirework())
+                    Vector relativeHit = rayTraceResult.getHitPosition().subtract(e.getLocation().toVector());
+                    if((e.getHeight() - relativeHit.getY()) < 0.60)
                     {
-                        Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
-                        FireworkMeta meta = fw.getFireworkMeta();
-                        meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
-                        fw.setFireworkMeta(meta);
+                        damage += gunSettings.getHeadshotDamage();
+                        headshot = true;
                     }
                 }
-                e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
-                e.damage(damage, player);
+        
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e, EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
+                Bukkit.getPluginManager().callEvent(event);
+                if(!event.isCancelled())
+                {
+                    if(headshot)
+                    {
+                        gunSettings.getHeadshotSound().play(player);
+                        if(gunSettings.isHeadshotFirework())
+                        {
+                            Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
+                            FireworkMeta meta = fw.getFireworkMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
+                            fw.setFireworkMeta(meta);
+                        }
+                    }
+                    e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
+                    e.damage(damage, player);
+                }
             }
         }
         
         if(getCurrentAmmo() == 0)
         {
-            reload();
+            if(reloadTask == null)
+            {
+                scheduleReloadSingle(gunSettings.getShootDelay());
+            }
         }
     }
     
@@ -128,7 +137,7 @@ public class HuntingRifle extends Gun
         
         if(reloadTask == null)
         {
-            scheduleReloadSingle();
+            scheduleReloadSingle(Math.max(gunSettings.getShootDelay() - Gun.nanosecondsToTicks(System.nanoTime() - lastShot), 0));
         }
     }
     
@@ -144,6 +153,11 @@ public class HuntingRifle extends Gun
     
     private void scheduleReloadSingle()
     {
+        scheduleReloadSingle(0);
+    }
+    
+    private void scheduleReloadSingle(int extra)
+    {
         BukkitRunnable runnable = new BukkitRunnable()
         {
             @Override
@@ -152,14 +166,14 @@ public class HuntingRifle extends Gun
                 reloadSingle();
             }
         };
-        reloadTask = runnable.runTaskLater(Marksman.instance, gunSettings.getReloadDelay());
+        reloadTask = runnable.runTaskLater(Marksman.instance, gunSettings.getReloadDelay() + extra);
     }
     
     private void reloadSingle()
     {
         setCurrentAmmo(getCurrentAmmo() + 1);
         gunSettings.getReloadSound().play(player);
-        lastShot += Gun.ticksToNanoseconds(gunSettings.getReloadDelay());
+        //lastShot += Gun.ticksToNanoseconds(gunSettings.getReloadDelay());
         
         if(getCurrentAmmo() < gunSettings.getReloadAmount())
         {
