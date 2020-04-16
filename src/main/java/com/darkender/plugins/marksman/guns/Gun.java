@@ -2,6 +2,7 @@ package com.darkender.plugins.marksman.guns;
 
 import com.darkender.plugins.marksman.Marksman;
 import com.darkender.plugins.marksman.sound.SoundCollection;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -10,21 +11,21 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.UUID;
+
 public abstract class Gun
 {
     protected GunSettings gunSettings;
-    protected Player player;
-    protected ItemStack item;
+    protected UUID uuid;
     
     // Gun data
     private int currentAmmo;
     
-    public Gun(GunSettings gunSettings, Player player, ItemStack item)
+    public Gun(GunSettings gunSettings, UUID uuid)
     {
         this.gunSettings = gunSettings;
-        this.player = player;
-        this.item = item;
-        this.currentAmmo = item.getItemMeta().getPersistentDataContainer().get(Marksman.ammoFlag, PersistentDataType.INTEGER);
+        this.uuid = uuid;
+        this.currentAmmo = getItem().getItemMeta().getPersistentDataContainer().get(Marksman.ammoFlag, PersistentDataType.INTEGER);
     }
     
     public abstract void fire();
@@ -35,10 +36,20 @@ public abstract class Gun
     protected void setCurrentAmmo(int currentAmmo)
     {
         this.currentAmmo = currentAmmo;
-        ItemMeta meta = item.getItemMeta();
+        ItemMeta meta = getItem().getItemMeta();
         meta.setDisplayName(getItemName());
         meta.getPersistentDataContainer().set(Marksman.ammoFlag, PersistentDataType.INTEGER, currentAmmo);
-        item.setItemMeta(meta);
+        getItem().setItemMeta(meta);
+    }
+    
+    protected Player getPlayer()
+    {
+        return Bukkit.getPlayer(uuid);
+    }
+    
+    protected ItemStack getItem()
+    {
+        return getPlayer().getInventory().getItemInMainHand();
     }
     
     protected int getCurrentAmmo()

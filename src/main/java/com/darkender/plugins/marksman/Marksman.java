@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemFlag;
@@ -36,6 +37,7 @@ public class Marksman extends JavaPlugin implements Listener
     
     private Set<GunSettings> guns;
     private Map<UUID, Gun> activeGuns;
+    private Set<UUID> ignoreInteract;
     
     @Override
     public void onEnable()
@@ -43,6 +45,7 @@ public class Marksman extends JavaPlugin implements Listener
         instance = this;
         gunFlag = new NamespacedKey(this, "gun");
         ammoFlag = new NamespacedKey(this, "ammo");
+        ignoreInteract = new HashSet<>();
         
         guns = new HashSet<>();
         activeGuns = new HashMap<>();
@@ -124,7 +127,7 @@ public class Marksman extends JavaPlugin implements Listener
                     {
                         if(gunName.equals("hunting-rifle"))
                         {
-                            activeGuns.put(p.getUniqueId(), new HuntingRifle(getGunSettings(gunName), p, p.getInventory().getItemInMainHand()));
+                            activeGuns.put(p.getUniqueId(), new HuntingRifle(getGunSettings(gunName), p.getUniqueId()));
                         }
                     }
                 }
@@ -284,10 +287,15 @@ public class Marksman extends JavaPlugin implements Listener
     @EventHandler
     public void onInteract(PlayerInteractEvent event)
     {
+        if(ignoreInteract.contains(event.getPlayer().getUniqueId()))
+        {
+            ignoreInteract.remove(event.getPlayer().getUniqueId());
+            return;
+        }
         String gunName = getGun(event.getItem());
         if(gunName != null)
         {
-            if(gunName.equals("debug"))
+            if(gunName.equals("debug") || true)
             {
                 event.getPlayer().sendMessage(ChatColor.GOLD + "Interacted with " + ChatColor.DARK_AQUA + gunName +
                         ChatColor.BLUE + " (" + event.getAction().name().toLowerCase() + ")");
@@ -305,6 +313,18 @@ public class Marksman extends JavaPlugin implements Listener
                     activeGuns.get(event.getPlayer().getUniqueId()).reload();
                 }
             }
+        }
+    }
+    
+    @EventHandler
+    public void onItemDrop(PlayerDropItemEvent event)
+    {
+        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.AIR &&
+                activeGuns.containsKey(event.getPlayer().getUniqueId()))
+        {
+            event.setCancelled(true);
+            ignoreInteract.add(event.getPlayer().getUniqueId());
+            activeGuns.get(event.getPlayer().getUniqueId()).reload();
         }
     }
     

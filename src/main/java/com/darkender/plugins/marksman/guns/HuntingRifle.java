@@ -18,6 +18,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class HuntingRifle extends Gun
@@ -26,9 +27,9 @@ public class HuntingRifle extends Gun
     private long lastShot = 0;
     private final long initialized;
     
-    public HuntingRifle(GunSettings gunSettings, Player player, ItemStack item)
+    public HuntingRifle(GunSettings gunSettings, UUID uuid)
     {
-        super(gunSettings, player, item);
+        super(gunSettings, uuid);
         initialized = System.nanoTime();
     }
     
@@ -41,14 +42,15 @@ public class HuntingRifle extends Gun
     
     private void refreshItemName()
     {
-        ItemMeta meta = item.getItemMeta();
+        ItemMeta meta = getItem().getItemMeta();
         meta.setDisplayName(getItemName());
-        item.setItemMeta(meta);
+        getItem().setItemMeta(meta);
     }
     
     @Override
     public void fire()
     {
+        Player player = getPlayer();
         if(getCurrentAmmo() == 0)
         {
             if(reloadTask == null)
@@ -195,7 +197,7 @@ public class HuntingRifle extends Gun
     private void reloadSingle()
     {
         setCurrentAmmo(getCurrentAmmo() + 1);
-        gunSettings.getReloadSound().play(player);
+        gunSettings.getReloadSound().play(getPlayer());
         //lastShot += Gun.ticksToNanoseconds(gunSettings.getReloadDelay());
         
         if(getCurrentAmmo() < gunSettings.getReloadAmount())
