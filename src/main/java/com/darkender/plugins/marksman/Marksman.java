@@ -295,7 +295,7 @@ public class Marksman extends JavaPlugin implements Listener
         String gunName = getGun(event.getItem());
         if(gunName != null)
         {
-            if(gunName.equals("debug") || true)
+            if(gunName.equals("debug"))
             {
                 event.getPlayer().sendMessage(ChatColor.GOLD + "Interacted with " + ChatColor.DARK_AQUA + gunName +
                         ChatColor.BLUE + " (" + event.getAction().name().toLowerCase() + ")");

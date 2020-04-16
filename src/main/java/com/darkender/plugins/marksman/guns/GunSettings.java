@@ -44,7 +44,7 @@ public class GunSettings
         ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(Marksman.gunFlag, PersistentDataType.STRING, name);
         meta.getPersistentDataContainer().set(Marksman.ammoFlag, PersistentDataType.INTEGER, reloadAmount);
-        meta.setDisplayName(ChatColor.GOLD + displayName + " [" + reloadAmount + "]");
+        meta.setDisplayName(ChatColor.YELLOW + displayName + " ▪ «" + reloadAmount + "»");
         item.setItemMeta(meta);
         return item;
     }
