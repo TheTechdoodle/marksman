@@ -8,11 +8,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
@@ -148,6 +145,7 @@ public class HuntingRifle extends Gun
             if(reloadTask == null)
             {
                 scheduleReloadSingle(gunSettings.getShootDelay());
+                refreshItemName();
             }
         }
     }
@@ -163,6 +161,7 @@ public class HuntingRifle extends Gun
         if(reloadTask == null)
         {
             scheduleReloadSingle(Math.max(gunSettings.getShootDelay() - Gun.nanosecondsToTicks(System.nanoTime() - lastShot), 0));
+            refreshItemName();
         }
     }
     
