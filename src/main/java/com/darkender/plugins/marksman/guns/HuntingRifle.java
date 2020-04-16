@@ -91,7 +91,15 @@ public class HuntingRifle extends Gun
                     public boolean test(Entity entity)
                     {
                         // Ensure the raytrace doesn't collide with the player
-                        return (entity.getEntityId() != player.getEntityId()) && (entity instanceof LivingEntity);
+                        if(entity instanceof Player)
+                        {
+                            Player p = (Player) entity;
+                            return (p.getEntityId() != player.getEntityId() && p.getGameMode() != GameMode.SPECTATOR && p.getGameMode() != GameMode.CREATIVE);
+                        }
+                        else
+                        {
+                            return (entity instanceof LivingEntity);
+                        }
                     }
                 });
         
@@ -108,40 +116,36 @@ public class HuntingRifle extends Gun
             else if(rayTraceResult.getHitEntity() != null)
             {
                 LivingEntity e = (LivingEntity) rayTraceResult.getHitEntity();
-                // Don't try to damage the player if they're in creative
-                if(!(e instanceof Player) || ((Player) e).getGameMode() != GameMode.CREATIVE)
+                double damage = gunSettings.getDamage();
+                boolean headshot = false;
+                if(gunSettings.isHeadshotsEnabled())
                 {
-                    double damage = gunSettings.getDamage();
-                    boolean headshot = false;
-                    if(gunSettings.isHeadshotsEnabled())
+                    Vector relativeHit = rayTraceResult.getHitPosition().subtract(e.getLocation().toVector());
+                    if((e.getHeight() - relativeHit.getY()) < 0.60)
                     {
-                        Vector relativeHit = rayTraceResult.getHitPosition().subtract(e.getLocation().toVector());
-                        if((e.getHeight() - relativeHit.getY()) < 0.60)
+                        damage += gunSettings.getHeadshotDamage();
+                        headshot = true;
+                    }
+                }
+
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e,
+                        EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
+                Bukkit.getPluginManager().callEvent(event);
+                if(!event.isCancelled())
+                {
+                    if(headshot)
+                    {
+                        gunSettings.getHeadshotSound().play(player);
+                        if(gunSettings.isHeadshotFirework())
                         {
-                            damage += gunSettings.getHeadshotDamage();
-                            headshot = true;
+                            Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
+                            FireworkMeta meta = fw.getFireworkMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
+                            fw.setFireworkMeta(meta);
                         }
                     }
-    
-                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e,
-                            EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
-                    Bukkit.getPluginManager().callEvent(event);
-                    if(!event.isCancelled())
-                    {
-                        if(headshot)
-                        {
-                            gunSettings.getHeadshotSound().play(player);
-                            if(gunSettings.isHeadshotFirework())
-                            {
-                                Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
-                                FireworkMeta meta = fw.getFireworkMeta();
-                                meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
-                                fw.setFireworkMeta(meta);
-                            }
-                        }
-                        e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
-                        e.damage(damage, player);
-                    }
+                    e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
+                    e.damage(damage, player);
                 }
             }
         }
