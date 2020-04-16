@@ -64,7 +64,7 @@ public class Marksman extends JavaPlugin implements Listener
         
         huntingRifleSettings.setTerrainParticles(true);
         huntingRifleSettings.setEntityParticles(true);
-        huntingRifleSettings.setShootParticles(Particle.FIREWORKS_SPARK);
+        huntingRifleSettings.setShootParticles(true);
         
         huntingRifleSettings.setKnockback(1.4);
         huntingRifleSettings.setDamage(8.0);

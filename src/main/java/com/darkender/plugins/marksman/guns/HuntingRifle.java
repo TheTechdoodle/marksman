@@ -76,6 +76,12 @@ public class HuntingRifle extends Gun
         
         gunSettings.getFireSound().play(player);
         setCurrentAmmo(getCurrentAmmo() - 1);
+        
+        if(gunSettings.isShootParticles())
+        {
+            Location shootLoc = player.getEyeLocation().clone().add(player.getEyeLocation().getDirection().multiply(2));
+            shootLoc.getWorld().playEffect(shootLoc, Effect.STEP_SOUND, Material.STONE);
+        }
     
         Location rayStart = player.getEyeLocation();
         RayTraceResult rayTraceResult = rayStart.getWorld().rayTrace(rayStart, player.getEyeLocation().getDirection(),

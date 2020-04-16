@@ -28,7 +28,7 @@ public class GunSettings
     
     private boolean terrainParticles;
     private boolean entityParticles;
-    private Particle shootParticles;
+    private boolean shootParticles;
     
     private double knockback;
     private double damage;
@@ -204,12 +204,12 @@ public class GunSettings
         this.entityParticles = entityParticles;
     }
     
-    public Particle getShootParticles()
+    public boolean isShootParticles()
     {
         return shootParticles;
     }
     
-    public void setShootParticles(Particle shootParticles)
+    public void setShootParticles(boolean shootParticles)
     {
         this.shootParticles = shootParticles;
     }
