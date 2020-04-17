@@ -138,7 +138,7 @@ public class HuntingRifle extends Gun
                         gunSettings.getHeadshotSound().play(player);
                         if(gunSettings.isHeadshotFirework())
                         {
-                            Firework fw = e.getWorld().spawn(e.getLocation(), Firework.class);
+                            Firework fw = e.getWorld().spawn(e.getLocation().add(0, e.getHeight(), 0), Firework.class);
                             FireworkMeta meta = fw.getFireworkMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.RED).withFlicker().withTrail().build());
                             fw.setFireworkMeta(meta);
