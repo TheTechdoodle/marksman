@@ -10,6 +10,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
@@ -127,12 +128,14 @@ public class HuntingRifle extends Gun
                         headshot = true;
                     }
                 }
-
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(player, e,
-                        EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage);
-                Bukkit.getPluginManager().callEvent(event);
-                if(!event.isCancelled())
+                
+                e.setMetadata("marksman-damagecheck", new FixedMetadataValue(Marksman.instance, true));
+                e.damage(damage, player);
+                boolean damagePasses = e.getMetadata("marksman-damagecheck").get(0).asBoolean();
+                e.removeMetadata("marksman-damagecheck", Marksman.instance);
+                if(damagePasses)
                 {
+                    e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
                     if(headshot)
                     {
                         gunSettings.getHeadshotSound().play(player);
@@ -144,8 +147,6 @@ public class HuntingRifle extends Gun
                             fw.setFireworkMeta(meta);
                         }
                     }
-                    e.setVelocity(e.getVelocity().add(player.getEyeLocation().getDirection().multiply(gunSettings.getKnockback())));
-                    e.damage(damage, player);
                 }
             }
         }
